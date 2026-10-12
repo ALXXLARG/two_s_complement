@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Two's Complement Playground — EE131</title>
+<style>
+:root { --bg:#0a1323; --panel:#122038; --panel2:#192a44; --stroke:#304461; --ink:#ecf5ff; --muted:#abc0d8; --cyan:#48d8f0; --amber:#ffd37a; --green:#76e6b5; --danger:#ff8891; --violet:#c2a9ff; --shadow:0 14px 42px rgba(1,7,19,.32); }
+* { box-sizing:border-box; }
+body { background:radial-gradient(ellipse 1200px 700px at 65% -270px, #233f64 0%, var(--bg) 70%); color:var(--ink); margin:0; font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; }
+button,input { font:inherit; }
+button { cursor:pointer; }
+button:focus-visible,input:focus-visible { outline:3px solid var(--cyan); outline-offset:3px; }
+a { color:var(--cyan); }
+.container { width:min(1160px, calc(100% - 32px)); margin:0 auto; }
+header { padding:34px 0 28px; }
+.eyebrow { color:var(--cyan); text-transform:uppercase; letter-spacing:.19em; font-weight:800; font-size:.76rem; margin-bottom:8px; }
+h1 { font-size:clamp(2.1rem,4.4vw,3.55rem); letter-spacing:-.055em; line-height:1.12; margin:0 0 10px; }
+.subtitle { margin:0; color:var(--muted); font-size:1.12rem; max-width:660px; }
+.pillrow { display:flex; flex-wrap:wrap; gap:9px; margin-top:19px; }
+.pill { border:1px solid var(--stroke); color:#d6e6f7; background:#172840; border-radius:100px; padding:5px 12px; font-size:.82rem; }
+main { padding-bottom:50px; }
+section.lab { margin:0 0 24px; border:1px solid var(--stroke); border-radius:21px; background:linear-gradient(150deg,rgba(28,47,72,.93),rgba(16,30,52,.98)); box-shadow:var(--shadow); padding:clamp(18px,3vw,29px); }
+.sectionHead { display:flex; gap:14px; align-items:flex-start; justify-content:space-between; margin-bottom:20px; }
+.kicker { color:var(--amber); font-weight:800; font-size:.81rem; letter-spacing:.12em; text-transform:uppercase; }
+h2 { font-size:clamp(1.45rem,2.8vw,1.95rem); line-height:1.2; margin:4px 0 5px; letter-spacing:-.022em; }
+.sectionDesc { margin:0; color:var(--muted); }
+.twoCol { display:grid; grid-template-columns:1.5fr 1fr; gap:18px; }
+.card { min-width:0; padding:20px; border-radius:15px; background:rgba(5,14,29,.29); border:1px solid #30415b; }
+.label { color:var(--muted); text-transform:uppercase; letter-spacing:.11em; font-size:.75rem; font-weight:800; }
+.bitRow { display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:6px; margin:13px 0 9px; }
+.bitButton { min-width:0; padding:10px 1px 7px; border:2px solid #38516f; border-radius:10px; color:#c9d8ed; background:#15263f; min-height:89px; transition:background .14s,border .14s,transform .14s; }
+.bitButton:hover { transform:translateY(-2px); border-color:#83adc7; }
+.bitButton.on { color:#082136; border-color:#62dcf3; background:var(--cyan); }
+.bitButton .bitNum { display:block; font-size:clamp(1.4rem,2.65vw,2.25rem); line-height:1.15; font-weight:900; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; }
+.bitButton .bitWeight { display:block; font-size:clamp(.67rem,1.18vw,.85rem); font-weight:700; margin-top:7px; white-space:nowrap; }
+.bitButton .bitIndex { display:block; font-size:.63rem; opacity:.75; }
+.binaryText { font:700 clamp(1.05rem,2.45vw,1.75rem)/1.5 ui-monospace,SFMono-Regular,Consolas,monospace; letter-spacing:.04em; color:#d0ebff; }
+.controls,.preset { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-top:15px; }
+button.control { padding:9px 13px; border-radius:10px; background:#263d59; color:#e6f5ff; border:1px solid #486580; font-weight:700; }
+button.control:hover { background:#335271; }
+button.control.primary { color:#072031; background:var(--cyan); border-color:var(--cyan); }
+button.control.primary:hover { background:#84eeff; }
+button.control.ghost { border:1px dashed #55728b; background:transparent; }
+button.control.selected { box-shadow:inset 0 0 0 2px var(--cyan); }
+.readoutBox { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:11px; }
+.readout { border-radius:12px; padding:13px 14px; border:1px solid #3c536e; background:#192f48; }
+.readout.signed { background:#26334f; border-color:#5f567f; }
+.readoutVal { font:800 clamp(1.7rem,3.3vw,2.7rem)/1.15 ui-monospace,SFMono-Regular,Consolas,monospace; margin-top:8px; color:var(--cyan); }
+.readout.signed .readoutVal { color:var(--violet); }
+.note { margin:15px 0 0; color:#d7e6f6; padding:11px 13px; background:#1e3349; border-left:3px solid var(--cyan); border-radius:7px; font-size:.93rem; }
+.note.warn { background:#482a38; border-color:var(--danger); }
+.note.good { border-color:var(--green); }
+.hint { color:var(--muted); font-size:.86rem; margin-top:9px; }
+.numInputs { display:flex; flex-wrap:wrap; gap:10px; align-items:end; margin-bottom:13px; }
+.inputCell { display:grid; gap:5px; min-width:110px; }
+.inputCell label { color:var(--muted); font-size:.8rem; font-weight:800; }
+input[type=number] { color:var(--ink); background:#0b1b30; border:1px solid #59718e; border-radius:10px; width:125px; padding:11px 12px; font-size:1.19rem; font-weight:800; }
+.operatorSwitch { display:flex; gap:5px; padding:4px; border:1px solid #486179; background:#172b42; border-radius:11px; }
+.operatorSwitch button { width:52px; border:0; background:transparent; padding:8px; border-radius:8px; color:var(--muted); font-size:1.3rem; font-weight:900; }
+.operatorSwitch button.active { background:var(--cyan); color:#062030; }
+.formula { font:800 clamp(1.3rem,2.3vw,1.82rem)/1.35 ui-monospace,SFMono-Regular,Consolas,monospace; margin:13px 0; }
+.formula span { color:var(--amber); }
+.reveal { border:1px solid var(--cyan); background:var(--cyan); color:#062032; padding:12px 21px; border-radius:11px; font-weight:900; margin-top:9px; }
+.reveal:hover { filter:brightness(1.1); }
+.hidden { display:none!important; }
+.resultGrid { display:grid; grid-template-columns:1.15fr 1fr; gap:16px; margin-top:18px; }
+.resultVal { font:900 clamp(2.3rem,4vw,3.1rem)/1.05 ui-monospace,SFMono-Regular,Consolas,monospace; color:var(--green); }
+.resultVal.overflow { color:var(--danger); }
+.statusFlag { display:inline-block; font-size:.8rem; font-weight:900; letter-spacing:.02em; padding:4px 8px; border-radius:7px; margin:8px 7px 0 0; background:#20483a; color:#a8f4d1; }
+.statusFlag.alert { background:#5f2c37; color:#ffc0c6; }
+.mathProof { display:grid; gap:6px; margin-top:12px; }
+.mathProof .equation { display:grid; grid-template-columns:94px 1fr; align-items:center; gap:9px; }
+.mathProof .equation .mono { font:800 clamp(.92rem,1.65vw,1.27rem)/1.35 ui-monospace,SFMono-Regular,Consolas,monospace; white-space:nowrap; letter-spacing:.07em; }
+.mathProof .equation strong { font-size:.81rem; color:var(--muted); }
+.mathProof .equation.sum { border-top:1px solid #66809c; padding-top:10px; margin-top:4px; }
+.mathProof .equation.sum .mono { color:var(--green); }
+.explanation { color:#d7e7f6; font-size:.94rem; margin:10px 0 0; }
+.exampleRow { display:flex; flex-wrap:wrap; gap:7px; margin:6px 0 15px; }
+.exampleRow button { border:1px solid #586d89; background:#152940; color:#d9ecff; border-radius:8px; padding:7px 11px; font-size:.88rem; font-weight:700; }
+.exampleRow button:hover { border-color:var(--cyan); }
+.small { color:var(--muted); font-size:.85rem; }
+.quizLayout { display:grid; grid-template-columns:1fr 300px; gap:20px; }
+.quizTitle { font-size:clamp(1.7rem,3.2vw,2.45rem); font-weight:900; letter-spacing:-.035em; margin:6px 0 17px; }
+.quizTitle code { font:inherit; color:var(--amber); }
+.answers { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.answers button { border:1px solid #5c7795; background:#1a334e; color:#e7f4ff; text-align:center; padding:12px; border-radius:11px; font:850 1.5rem ui-monospace,SFMono-Regular,Consolas,monospace; }
+.answers button:hover:not(:disabled) { background:#274d6c; border-color:var(--cyan); }
+.answers button.correct { border-color:#7feaaf; background:#1d513e; color:#ccffe5; }
+.answers button.incorrect { border-color:var(--danger); background:#59313b; color:#fff; }
+.answers button:disabled { cursor:default; }
+.quizFeedback { margin:15px 0 12px; background:#162a40; border-left:3px solid var(--violet); padding:13px 15px; border-radius:8px; }
+.quizFeedback strong { color:var(--amber); }
+.quizScore { display:grid; align-content:center; justify-items:center; padding:22px 14px; border-radius:14px; background:rgba(6,20,36,.44); border:1px solid #39516c; text-align:center; }
+.scoreNum { font:900 4.5rem/1.1 ui-monospace,SFMono-Regular,Consolas,monospace; color:var(--cyan); }
+.scoreCaption { color:var(--muted); }
+.progress { width:100%; height:9px; border-radius:10px; background:#324760; margin-top:20px; overflow:hidden; }
+.progressFill { height:100%; background:linear-gradient(90deg,#48d8f0,#b2a1ff); transition:width .2s; }
+.compareGrid { display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:18px; }
+.compareItem { border:1px solid var(--stroke); background:#172940; padding:17px; border-radius:13px; }
+.compareItem h3 { font-size:1.05rem; margin:0 0 7px; }
+.compareItem code { color:var(--amber); font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-weight:700; }
+.compareItem p { margin:9px 0 0; color:#c8d9eb; }
+footer { color:#93adc7; text-align:center; padding:9px 0 34px; font-size:.86rem; }
+footer span { color:var(--cyan); }
+details { margin-top:20px; border:1px dashed #68809d; padding:12px 16px; border-radius:10px; color:#d5e6f8; }
+summary { font-weight:800; cursor:pointer; }
+details p { margin:9px 0; }
+@media (max-width:870px) { .twoCol,.resultGrid,.quizLayout { grid-template-columns:1fr; } .quizScore { padding:16px; } .scoreNum { font-size:2.9rem; } }
+@media (max-width:590px) { .container { width:min(100% - 18px,1160px); } header { padding-top:21px; } section.lab { padding:16px 12px; border-radius:15px; } .card { padding:12px; } .bitRow { gap:4px; } .bitButton { min-height:75px; padding:6px 0; } .bitButton .bitWeight { font-size:.62rem; } .bitButton .bitIndex { display:none; } .compareGrid { grid-template-columns:1fr; } .mathProof .equation { grid-template-columns:70px 1fr; } .answers button { font-size:1.25rem; } }
+@media (prefers-reduced-motion:reduce) { *,*::before,*::after { transition:none!important; } }
+</style>
+</head>
+<body>
+<header class="container">
+  <div class="eyebrow">EE131 · Digital Electronics I · classroom demo</div>
+  <h1>Two's Complement Playground</h1>
+  <p class="subtitle">Three quick experiments: flip the bits, reuse an adder, and outsmart an 8-bit CPU.</p>
+  <div class="pillrow"><span class="pill">Fixed width: 8 bits</span><span class="pill">Signed range: −128 to +127</span><span class="pill">Works offline · no libraries</span></div>
+</header>
+<main class="container">
+  <section class="lab" id="bits">
+    <div class="sectionHead"><div><div class="kicker">01 · Try the switches</div><h2>Same bits. Two different meanings.</h2><p class="sectionDesc">Click the bit switches—or load a special number—and compare the two interpretations.</p></div></div>
+    <div class="twoCol">
+      <div class="card">
+        <div class="label">8-bit register <span class="small">· top labels are two's-complement weights</span></div>
+        <div id="bitsRow" class="bitRow" role="group" aria-label="8 bit toggles"></div>
+        <div class="binaryText" id="bitsText">0000 0000</div>
+        <div class="controls"><button class="control primary" id="increment">+1</button><button class="control" id="decrement">−1</button><button class="control ghost" id="negate">Negate (NOT + 1)</button></div>
+        <div class="label" style="margin-top:17px">Load a pattern</div>
+        <div class="preset"><button class="control" data-preset="0">0</button><button class="control" data-preset="5">+5</button><button class="control" data-preset="251">−5</button><button class="control" data-preset="255">−1</button><button class="control" data-preset="127">+127</button><button class="control" data-preset="128">−128</button></div>
+      </div>
+      <div class="card">
+        <div class="label">Read the exact same eight bits as…</div>
+        <div class="readoutBox"><div class="readout"><div class="label">Unsigned</div><div class="readoutVal" id="unsignedVal">0</div><div class="small">0 … 255</div></div><div class="readout signed"><div class="label">Signed</div><div class="readoutVal" id="signedVal">0</div><div class="small">−128 … +127</div></div></div>
+        <p class="hint">Hex value: <strong id="hexVal">0x00</strong></p>
+        <div class="note" id="bitNote" aria-live="polite">Start by loading −1. Why does the unsigned readout say 255?</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="lab" id="adder">
+    <div class="sectionHead"><div><div class="kicker">02 · One adder, two jobs</div><h2>How can addition perform subtraction?</h2><p class="sectionDesc">Pick two signed numbers, predict the answer, then reveal the exact bit operations.</p></div></div>
+    <div class="card">
+      <div class="numInputs">
+        <div class="inputCell"><label for="numberA">Number A</label><input type="number" id="numberA" min="-128" max="127" step="1" value="3"></div>
+        <div><div class="label" style="margin-bottom:5px">Operation</div><div class="operatorSwitch" role="group" aria-label="Choose arithmetic operation"><button id="opAdd" aria-pressed="false">+</button><button id="opSub" class="active" aria-pressed="true">−</button></div></div>
+        <div class="inputCell"><label for="numberB">Number B</label><input type="number" id="numberB" min="-128" max="127" step="1" value="5"></div>
+      </div>
+      <div class="label">Try a classroom example</div>
+      <div class="exampleRow">
+        <button data-a="3" data-op="-" data-b="5">3 − 5</button>
+        <button data-a="7" data-op="-" data-b="7">7 − 7</button>
+        <button data-a="127" data-op="+" data-b="1">127 + 1</button>
+        <button data-a="-1" data-op="+" data-b="1">−1 + 1</button>
+        <button data-a="-128" data-op="-" data-b="1">−128 − 1</button>
+      </div>
+      <div class="formula" id="formula">3 <span>−</span> 5 = ?</div>
+      <button class="reveal" id="reveal">Reveal bit-by-bit computation</button>
+      <div id="revealBody" class="hidden" aria-live="polite">
+        <div class="resultGrid">
+          <div class="card">
+            <div class="label">8-bit signed result</div><div class="resultVal" id="resultValue">−2</div>
+            <div class="binaryText" id="resultBinary">1111 1110</div>
+            <div><span class="statusFlag" id="ofFlag">OF = 0</span><span class="statusFlag" id="carryFlag">Carry out = 0</span></div>
+            <p class="explanation" id="resultComment">The same ordinary 8-bit addition circuit did the work.</p>
+          </div>
+          <div class="card">
+            <div class="label" id="proofTitle">A − B = A + (NOT B + 1)</div>
+            <div id="mathProof" class="mathProof"></div>
+          </div>
+        </div>
+        <div class="note" id="overflowNote"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="lab" id="challenge">
+    <div class="sectionHead"><div><div class="kicker">03 · Class challenge</div><h2>Beat the 8-bit CPU</h2><p class="sectionDesc">The CPU returns an 8-bit signed result. Can you predict it before clicking?</p></div></div>
+    <div class="quizLayout">
+      <div class="card">
+        <div class="label" id="quizProgress">Question 1 / 5</div>
+        <div class="quizTitle" id="quizTitle"><code>3 − 5</code> = ?</div>
+        <div class="answers" id="answers"></div>
+        <div class="quizFeedback hidden" id="quizFeedback" aria-live="polite"></div>
+        <div class="controls"><button class="control primary hidden" id="nextQuestion">Next challenge →</button><button class="control ghost" id="restartQuiz">Restart game</button></div>
+      </div>
+      <div class="quizScore"><div class="label">Your score</div><div class="scoreNum" id="score">0/5</div><div class="scoreCaption">Choose the correct <strong>signed</strong> result</div><div class="progress"><div class="progressFill" id="progressFill" style="width:0%"></div></div><div class="hint" style="text-align:center">A signed overflow does <em>not</em> cause an error message in this toy CPU—it wraps around.</div></div>
+    </div>
+  </section>
+
+  <section class="lab" id="why">
+    <div class="kicker">One final aha moment</div>
+    <h2>Why not just add a sign bit?</h2>
+    <p class="sectionDesc">A sign-magnitude encoding looks intuitive, but ordinary binary addition does not work the same way.</p>
+    <div class="compareGrid">
+      <div class="compareItem"><h3>Sign-magnitude — a trap</h3><div><code>+3 = 0000 0011</code></div><div><code>−5 = 1000 0101</code></div><div><code>raw sum = 1000 1000</code></div><p>Read as sign-magnitude: <strong>−8</strong> (wrong). The sign and magnitude need special treatment. It also has both +0 and −0.</p></div>
+      <div class="compareItem"><h3>Two's complement — a win</h3><div><code>+3 = 0000 0011</code></div><div><code>−5 = 1111 1011</code></div><div><code>raw sum = 1111 1110</code></div><p>Read as two's complement: <strong>−2</strong> (correct). Addition uses the same bitwise adder, and zero has just one representation.</p></div>
+    </div>
+  </section>
+</main>
+<footer class="container">Made for classroom exploration · <span>8-bit modular arithmetic</span> · Runs entirely on your computer</footer>
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => n < 0 ? '\u2212' + (-n) : String(n);
+  const toByte = (n) => ((n % 256) + 256) % 256;
+  const toSigned = (bits) => bits < 128 ? bits : bits - 256;
+  const binary = (n) => toByte(n).toString(2).padStart(8,'0');
+  const spaced = (n) => binary(n).replace(/(.{4})/,'$1 ');
+  const clipSigned = (x) => Math.max(-128, Math.min(127, Number.isFinite(x) ? Math.trunc(x) : 0));
+
+  let register = 0;
+  let registerStatus = '';
+  const bitButtons = [];
+  for (let i = 7; i >= 0; i--) {
+    const b = document.createElement('button');
+    b.type='button'; b.className='bitButton'; b.dataset.index=i;
+    b.innerHTML = `<span class="bitNum">0</span><span class="bitWeight">${i===7?'−128':2**i}</span><span class="bitIndex">bit ${i}</span>`;
+    b.addEventListener('click', () => { setRegister(register ^ (1 << i), 'You toggled bit ' + i + '. Watch how both readings change.'); });
+    $('bitsRow').appendChild(b);
+    bitButtons.push(b);
+  }
+  function setRegister(value, status='') {
+    register=toByte(value); registerStatus=status;
+    bitButtons.forEach(btn => {
+      const on=Boolean(register & (1 << Number(btn.dataset.index)));
+      btn.classList.toggle('on', on);
+      btn.querySelector('.bitNum').textContent=on?'1':'0';
+      btn.setAttribute('aria-label',`Bit ${btn.dataset.index}, ${on?'on':'off'}, click to toggle`);
+      btn.setAttribute('aria-pressed', String(on));
+    });
+    $('bitsText').textContent=spaced(register);
+    $('unsignedVal').textContent=String(register);
+    $('signedVal').textContent=fmt(toSigned(register));
+    $('hexVal').textContent='0x'+register.toString(16).padStart(2,'0').toUpperCase();
+    const note=$('bitNote'); note.classList.remove('warn','good');
+    if (status) note.textContent=status;
+    else if (register===0) note.textContent='Zero has exactly one representation in two’s complement: 00000000.';
+    else if (register===255) note.textContent='Aha! 11111111 is 255 unsigned, but −1 signed. Same physical bits, different interpretation.';
+    else if (register===127) note.textContent='+127 is the largest 8-bit signed integer. Predict what happens when you press +1.';
+    else if (register===128) note.textContent='10000000 is −128 signed. The sign bit is worth −128, not +128.';
+    else if (toSigned(register)<0) note.textContent='For signed decoding, the leftmost bit contributes −128; the other weights remain positive.';
+    else note.textContent='Both readings agree when bit 7 is zero. Try switching on the leftmost bit.';
+    if (/overflow|wraps|cannot represent/i.test(note.textContent)) note.classList.add('warn');
+  }
+  $('increment').addEventListener('click', () => {
+    const before=toSigned(register), after=toSigned(toByte(register+1));
+    const status=before===127 ? 'Signed overflow! +127 + 1 wraps to −128 because 8 bits cannot represent +128.' : (register===255 ? 'Unsigned carry-out! 255 + 1 wraps to 0. Interpreted as signed, −1 + 1 = 0 is correct.' : `Signed value: ${fmt(before)} → ${fmt(after)}.`);
+    setRegister(register+1,status);
+  });
+  $('decrement').addEventListener('click', () => {
+    const before=toSigned(register), after=toSigned(toByte(register-1));
+    const status=before===-128 ? 'Signed overflow! −128 − 1 wraps to +127 because 8 bits cannot represent −129.' : `Signed value: ${fmt(before)} → ${fmt(after)}.`;
+    setRegister(register-1,status);
+  });
+  $('negate').addEventListener('click', () => {
+    const prior=register, before=toSigned(prior);
+    const flipped=(~prior)&255, negated=(flipped+1)&255;
+    const extra=before===-128?' Overflow: +128 does not fit in int8.':'';
+    setRegister(negated,`Negate ${fmt(before)}: NOT ${spaced(prior)} = ${spaced(flipped)}, then +1 → ${spaced(negated)} (${fmt(toSigned(negated))}).${extra}`);
+  });
+  document.querySelectorAll('[data-preset]').forEach(btn=>btn.addEventListener('click',()=>setRegister(Number(btn.dataset.preset))));
+  setRegister(255);
+
+  let operation='-';
+  let revealed=false;
+  function readOperand(id) {
+    const raw=Number($(id).value);
+    return clipSigned($(id).value.trim()===''?0:raw);
+  }
+  function compute(a,b,op) {
+    const ab=toByte(a), bb=toByte(b), inverted=(~bb)&255;
+    const transformed=op==='-'?toByte(inverted+1):bb;
+    const rawSum=ab+transformed;
+    const outByte=toByte(rawSum);
+    const exact=a+(op==='-'?-b:b);
+    return {a,b,op,ab,bb,inverted,transformed,outByte,rawSum,exact,signed:toSigned(outByte),carry:rawSum>255,overflow:exact>127||exact< -128};
+  }
+  function setOp(op) {
+    operation=op;
+    $('opAdd').classList.toggle('active',op==='+'); $('opSub').classList.toggle('active',op==='-');
+    $('opAdd').setAttribute('aria-pressed',String(op==='+'));
+    $('opSub').setAttribute('aria-pressed',String(op==='-'));
+    refreshAdder();
+  }
+  function hideResult() {
+    revealed=false; $('revealBody').classList.add('hidden');
+    $('reveal').textContent='Reveal bit-by-bit computation';
+  }
+  function refreshAdder() {
+    const a=readOperand('numberA'), b=readOperand('numberB');
+    $('formula').innerHTML=`${fmt(a)} <span>${operation==='+'?'+':'−'}</span> ${fmt(b)} = ?`;
+    hideResult();
+  }
+  $('opAdd').addEventListener('click',()=>setOp('+'));
+  $('opSub').addEventListener('click',()=>setOp('-'));
+  for (const id of ['numberA','numberB']) {
+    $(id).addEventListener('input', refreshAdder);
+    $(id).addEventListener('blur',()=>{ $(id).value=readOperand(id); refreshAdder(); });
+  }
+  document.querySelectorAll('[data-a][data-b]').forEach(btn=>btn.addEventListener('click',()=>{
+    $('numberA').value=btn.dataset.a; $('numberB').value=btn.dataset.b;
+    setOp(btn.dataset.op);
+  }));
+  function proofRow(name, bits, hint='') {
+    const row=document.createElement('div');
+    row.className='equation'+(name==='Result'?' sum':'');
+    const label=document.createElement('strong'); label.textContent=name;
+    const num=document.createElement('span'); num.className='mono'; num.textContent=spaced(bits);
+    if (hint) num.title=hint;
+    row.append(label,num); return row;
+  }
+  function showResult() {
+    const r=compute(readOperand('numberA'),readOperand('numberB'),operation);
+    revealed=true; $('revealBody').classList.remove('hidden');
+    $('reveal').textContent='Hide result / predict again';
+    $('resultValue').textContent=fmt(r.signed);
+    $('resultValue').classList.toggle('overflow',r.overflow);
+    $('resultBinary').textContent=spaced(r.outByte);
+    $('ofFlag').textContent=`Signed overflow (OF) = ${Number(r.overflow)}`;
+    $('ofFlag').classList.toggle('alert',r.overflow);
+    $('carryFlag').textContent=`Carry out = ${Number(r.carry)}`;
+    $('carryFlag').classList.toggle('alert',r.carry);
+    const proof=$('mathProof');proof.replaceChildren();
+    $('proofTitle').textContent=operation==='-'?'A − B = A + (NOT B + 1)':'A + B: ordinary binary addition';
+    proof.appendChild(proofRow('A',r.ab));
+    proof.appendChild(proofRow('B',r.bb));
+    if (operation==='-') { proof.appendChild(proofRow('NOT B',r.inverted)); proof.appendChild(proofRow('NOT B + 1',r.transformed)); }
+    else proof.appendChild(proofRow('Addend B',r.transformed));
+    proof.appendChild(proofRow('Result',r.outByte));
+    $('resultComment').textContent=operation==='-'?
+      'A subtraction uses the same 8-bit adder: invert B, add 1, then add A.' :
+      'The adder does ordinary binary addition; whether the result is signed comes from how the bits are interpreted.';
+    const note=$('overflowNote'); note.classList.toggle('warn',r.overflow);
+    note.classList.toggle('good',!r.overflow);
+    if (r.overflow) {
+      note.textContent=`Signed overflow: the mathematical answer ${fmt(r.exact)} is outside −128…127. Keeping only 8 bits gives ${spaced(r.outByte)}, interpreted as ${fmt(r.signed)}. Carry-out and signed overflow are different flags.`;
+    } else if (r.carry) {
+      note.textContent=`The correct signed answer is ${fmt(r.signed)}. Carry-out = 1, but signed overflow = 0. Carry-out does not necessarily mean a signed overflow.`;
+    } else {
+      note.textContent=`The exact result ${fmt(r.exact)} fits in 8 signed bits. The hardware keeps the low 8 bits (${spaced(r.outByte)}), producing the correct signed result ${fmt(r.signed)}.`;
+    }
+  }
+  $('reveal').addEventListener('click',()=>{ if(revealed) hideResult(); else showResult(); });
+  refreshAdder();
+
+  const questions=[
+    {a:3,op:'-',b:5,options:[254,-2,2,-3]},
+    {a:127,op:'+',b:1,options:[128,-127,-128,0]},
+    {a:-1,op:'+',b:1,options:[256,-2,0,1]},
+    {a:100,op:'+',b:50,options:[150,-106,-105,106]},
+    {a:-128,op:'-',b:1,options:[-129,127,-127,128]}
+  ];
+  let qIndex=0,score=0,answered=false;
+  function renderQuestion(){
+    const q=questions[qIndex]; answered=false;
+    $('quizProgress').textContent=`Question ${qIndex+1} / ${questions.length}`;
+    $('quizTitle').textContent=`${fmt(q.a)} ${q.op==='+'?'+':'−'} ${fmt(q.b)} = ?`;
+    const holder=$('answers'); holder.replaceChildren();
+    q.options.forEach(v=>{
+      const btn=document.createElement('button');btn.type='button';btn.textContent=fmt(v);btn.dataset.answer=String(v);
+      btn.addEventListener('click',()=>choose(v));holder.appendChild(btn);
+    });
+    $('quizFeedback').classList.add('hidden');
+    $('nextQuestion').classList.add('hidden');
+    $('score').textContent=`${score}/${questions.length}`;
+    $('progressFill').style.width=`${(qIndex/questions.length)*100}%`;
+  }
+  function choose(v) {
+    if(answered) return;
+    answered=true;
+    const q=questions[qIndex],r=compute(q.a,q.b,q.op),right=v===r.signed;
+    if(right) score++;
+    $('score').textContent=`${score}/${questions.length}`;
+    for(const btn of $('answers').children){
+      btn.disabled=true;
+      if(Number(btn.dataset.answer)===r.signed) btn.classList.add('correct');
+      else if(Number(btn.dataset.answer)===v) btn.classList.add('incorrect');
+    }
+    const fb=$('quizFeedback'); fb.classList.remove('hidden');
+    fb.textContent=`${right?'Correct! ':'Not quite. '}${spaced(r.ab)} ${q.op==='+'?'+':'−'} ${spaced(r.bb)} → ${spaced(r.outByte)} = ${fmt(r.signed)} as a signed 8-bit integer. ${r.overflow?'Signed overflow occurred.':'No signed overflow.'}${r.carry?' Carry-out is 1.':''}`;
+    $('nextQuestion').textContent=qIndex===questions.length-1?'See final score →':'Next challenge →';
+    $('nextQuestion').classList.remove('hidden');
+    $('progressFill').style.width=`${((qIndex+1)/questions.length)*100}%`;
+  }
+  $('nextQuestion').addEventListener('click',()=>{
+    if(qIndex===questions.length-1){
+      $('quizProgress').textContent='Game completed';
+      $('quizTitle').textContent=`Final score: ${score} / ${questions.length}`;
+      $('answers').replaceChildren();
+      $('quizFeedback').textContent=score===5?'Perfect! All five signed results correct.':'Try again and aim for five out of five!';
+      $('nextQuestion').classList.add('hidden');
+      return;
+    }
+    qIndex++;renderQuestion();
+  });
+  $('restartQuiz').addEventListener('click',()=>{qIndex=0;score=0;renderQuestion();});
+  renderQuestion();
+})();
+</script>
+</body>
+</html>
